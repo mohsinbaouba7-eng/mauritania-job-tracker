@@ -114,3 +114,47 @@ def main_pipeline():
 
 if __name__ == "__main__":
     main_pipeline()
+
+
+# --- PLATFORM F: RIMTIC (MAURITANIA) ---
+    rimtic_soup = scrape_board(
+        url="https://rimtic.com/fr/offre-emploi",
+        params={"search": term}, 
+        headers=headers, 
+        platform_name="Rimtic"
+    )
+    
+    if rimtic_soup:
+        # Rimtic lists jobs inside an entry-card layout or item blocks
+        for post in rimtic_soup.find_all('div', class_='job-item'):  # Replace with specific class if needed
+            title_element = post.find('h3') or post.find('a', class_='job-title')
+            title = title_element.text.strip() if title_element else "N/A"
+            
+            # Append directly into your central scraped_jobs listing array
+            if title != "N/A":
+                scraped_jobs.append({
+                    "Title": title, 
+                    "Company": "Rimtic Verified", 
+                    "Category": bucket_name,
+                    "Source Platform": "Rimtic"
+                })
+
+# --- PLATFORM G: ARBEITNOW (WORLDWIDE PUBLIC API) ---
+    try:
+        # Free open platform endpoint requiring no specialized auth keys
+        global_api_url = f"https://www.arbeitnow.com/api/job-board-api?search={term}"
+        api_response = requests.get(global_api_url, headers=headers, timeout=10)
+        
+        if api_response.status_code == 200:
+            api_data = api_response.json()
+            for job_entry in api_data.get('data', [])[:5]:  # Limit to top 5 results per query to save space
+                scraped_jobs.append({
+                    "Title": job_entry.get('title'),
+                    "Company": job_entry.get('company_name'),
+                    "Category": bucket_name,
+                    "Source Platform": "Arbeitnow (Worldwide)"
+                })
+    except Exception as e:
+        print(f"[-] Global API match skipped for term '{term}': {e}")
+
+        
