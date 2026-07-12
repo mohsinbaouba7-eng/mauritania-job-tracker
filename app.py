@@ -24,30 +24,41 @@ try:
     if not df.empty and df['Job Count'].sum() > 0:
         
         # --- DRILL-DOWN OPTION A: SIDEBAR DROPDOWN SELECTOR ---
-        st.sidebar.header("🎯 Navigation Control")
-        platform_options = ["All Platforms"] + list(df['Source Platform'].unique())
-        selected_platform = st.sidebar.selectbox("Isolate Job Board Target:", platform_options)
+        st.sidebar.header("🔮 Navigation Control")
         
-        # Dynamically slice dataset based on user click actions
+        # Explicitly list all platforms so they always appear in your UI dropdown
+        platform_options = [
+            "All Platforms",
+            "Techghil",
+            "Beta Conseils",
+            "Novojob",
+            "Emploi Mauritanie",
+            "LinkedIn",
+            "Rimtic",
+            "Arbeitnow (Worldwide)"
+        ]
+        
+        selected_platform = st.sidebar.selectbox("Isolate Job Board Target:", options=platform_options)
+        
         if selected_platform != "All Platforms":
             filtered_df = df[df['Source Platform'] == selected_platform]
             if "LinkedIn" in selected_platform:
                 chart_title = f"✨ Market Demand Distribution: {selected_platform} (Worldwide)"
             else:
                 chart_title = f"✨ Market Demand Distribution: {selected_platform} (Mauritania)"
-            color_slice = None 
+            color_slice = None
         else:
             filtered_df = df
             chart_title = "✨ Aggregated Market Demand Matrix (Local & Global)"
-            color_slice = 'Source Platform' 
-
+            color_slice = 'Source Platform'
+            
         # Build horizontal visualization presentation
         fig = px.bar(
             filtered_df,
             x='Job Count',
             y='Job Category',
             orientation='h',
-            color=color_slice, 
+            color=color_slice,
             text='Job Count',
             title=chart_title,
             labels={'Job Count': 'Total Live Vacancies', 'Job Category': 'Standardized Industry Field'},
@@ -71,6 +82,6 @@ try:
         
     else:
         st.warning("⚠️ Data workspace frame initialized but empty. Re-verify scraper script pipelines.")
-        
+
 except Exception as e:
-    st.info("💡 Data source file not found. Execute your 'python scraper.py' engine in the terminal to generate active analytics data layers.")
+    st.info("💡 Data source file not found. Execute your 'python scraper.py' engine in the terminal to generate active analytics.")
