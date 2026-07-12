@@ -98,6 +98,45 @@ def main_pipeline():
                     company = post.find('h4', class_='base-search-card__subtitle').text.strip()
                     scraped_jobs.append({"Title": title, "Company": company, "Category": bucket_name, "Source": "LinkedIn"})
 
+# --- PLATFORM F: RIMTIC (MAURITANIA) ---
+        rimtic_soup = scrape_board(
+            url="https://rimtic.com/fr/offre-emploi",
+            params={"search": term}, 
+            headers=headers, 
+            platform_name="Rimtic"
+        )
+        
+        if rimtic_soup:
+            # Rimtic uses unique custom page blocks or standard rows for job links
+            for post in rimtic_soup.find_all(['li', 'div', 'a'], class_=lambda c: c and 'offre' in c.lower()):
+                title_element = post.find(['h3', 'h4', 'span']) or post
+                title = title_element.text.strip() if title_element else "N/A"
+                
+                if title != "N/A" and len(title) > 3:
+                    scraped_jobs.append({
+                        "Title": title, 
+                        "Company": "Rimtic Client", 
+                        "Category": bucket_name,
+                        "Source Platform": "Rimtic"
+                    })
+
+        # --- PLATFORM G: ARBEITNOW (WORLDWIDE PUBLIC API) ---
+        try:
+            global_api_url = f"https://www.arbeitnow.com/api/job-board-api?search={term}"
+            api_response = requests.get(global_api_url, headers=headers, timeout=10)
+            
+            if api_response.status_code == 200:
+                api_data = api_response.json()
+                for job_entry in api_data.get('data', [])[:5]:
+                    scraped_jobs.append({
+                        "Title": job_entry.get('title'),
+                        "Company": job_entry.get('company_name'),
+                        "Category": bucket_name,
+                        "Source Platform": "Arbeitnow (Worldwide)"
+                    })
+        except Exception as e:
+            print(f"[-] Global API match skipped for term '{term}': {e}")
+
             time.sleep(1)
 
     # Process and group data by Category AND Source platform
@@ -115,46 +154,4 @@ def main_pipeline():
 if __name__ == "__main__":
     main_pipeline()
 
-
-# --- PLATFORM F: RIMTIC (MAURITANIA) ---
-    rimtic_soup = scrape_board(
-        url="https://rimtic.com/fr/offre-emploi",
-        params={"search": term}, 
-        headers=headers, 
-        platform_name="Rimtic"
-    )
-    
-    if rimtic_soup:
-        # Rimtic lists jobs inside an entry-card layout or item blocks
-        for post in rimtic_soup.find_all('div', class_='job-item'):  # Replace with specific class if needed
-            title_element = post.find('h3') or post.find('a', class_='job-title')
-            title = title_element.text.strip() if title_element else "N/A"
             
-            # Append directly into your central scraped_jobs listing array
-            if title != "N/A":
-                scraped_jobs.append({
-                    "Title": title, 
-                    "Company": "Rimtic Verified", 
-                    "Category": bucket_name,
-                    "Source Platform": "Rimtic"
-                })
-
-# --- PLATFORM G: ARBEITNOW (WORLDWIDE PUBLIC API) ---
-    try:
-        # Free open platform endpoint requiring no specialized auth keys
-        global_api_url = f"https://www.arbeitnow.com/api/job-board-api?search={term}"
-        api_response = requests.get(global_api_url, headers=headers, timeout=10)
-        
-        if api_response.status_code == 200:
-            api_data = api_response.json()
-            for job_entry in api_data.get('data', [])[:5]:  # Limit to top 5 results per query to save space
-                scraped_jobs.append({
-                    "Title": job_entry.get('title'),
-                    "Company": job_entry.get('company_name'),
-                    "Category": bucket_name,
-                    "Source Platform": "Arbeitnow (Worldwide)"
-                })
-    except Exception as e:
-        print(f"[-] Global API match skipped for term '{term}': {e}")
-
-        
